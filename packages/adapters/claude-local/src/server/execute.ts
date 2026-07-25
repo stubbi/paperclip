@@ -25,6 +25,7 @@ import {
   parseClaudeStreamJson,
   describeClaudeFailure,
   detectClaudeLoginRequired,
+  buildClaudeAuthRequiredMessage,
   isClaudeMaxTurnsResult,
   isClaudeUnknownSessionError,
 } from "./parse.js";
@@ -495,7 +496,9 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
         exitCode: proc.exitCode,
         signal: proc.signal,
         timedOut: false,
-        errorMessage: parseFallbackErrorMessage(proc),
+        errorMessage: loginMeta.requiresLogin
+          ? buildClaudeAuthRequiredMessage(loginMeta.loginUrl)
+          : parseFallbackErrorMessage(proc),
         errorCode: loginMeta.requiresLogin ? "claude_auth_required" : null,
         errorMeta,
         resultJson: {
@@ -538,7 +541,9 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       errorMessage:
         (proc.exitCode ?? 0) === 0
           ? null
-          : describeClaudeFailure(parsed) ?? `Claude exited with code ${proc.exitCode ?? -1}`,
+          : loginMeta.requiresLogin
+            ? buildClaudeAuthRequiredMessage(loginMeta.loginUrl)
+            : describeClaudeFailure(parsed) ?? `Claude exited with code ${proc.exitCode ?? -1}`,
       errorCode: loginMeta.requiresLogin ? "claude_auth_required" : null,
       errorMeta,
       usage,

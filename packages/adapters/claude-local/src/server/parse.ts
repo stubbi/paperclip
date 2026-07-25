@@ -119,6 +119,18 @@ export function extractClaudeLoginUrl(text: string): string | null {
   return match[0]?.replace(/[\])}.!,?;:'\"]+$/g, "") ?? null;
 }
 
+// When the Claude CLI reports it is not authenticated, it emits a raw operator
+// message ("Not logged in · Please run /login") that is meaningless to a
+// Paperclip user, who never runs the CLI directly and cannot "/login" a managed
+// sandbox. Surface the platform-standard, actionable guidance instead so the
+// dead-end points at the fix: connect an inference credential for the agent.
+export function buildClaudeAuthRequiredMessage(loginUrl?: string | null): string {
+  const base =
+    "No Anthropic credential is connected for this agent. Connect a provider key (an Anthropic API key, or a Claude subscription login), then resume.";
+  const url = typeof loginUrl === "string" ? loginUrl.trim() : "";
+  return url ? `${base} Sign in: ${url}` : base;
+}
+
 export function detectClaudeLoginRequired(input: {
   parsed: Record<string, unknown> | null;
   stdout: string;
